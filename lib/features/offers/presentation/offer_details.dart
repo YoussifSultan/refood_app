@@ -38,7 +38,7 @@ class _OfferDetailPageState extends State<OfferDetailPage> {
       body: SafeArea(
         child: FutureBuilder(
             future: getOfferDetails(),
-            builder: (context) {
+            builder: (context, snapshot) {
               return Column(
                 children: [
                   // Top image + back + cart
