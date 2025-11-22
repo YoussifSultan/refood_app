@@ -1,0 +1,345 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:refood_app/core/constants/ui_constants.dart';
+
+class CustomTextBox extends StatefulWidget {
+  final String label;
+  final String? helperText;
+  final Function? validator;
+  final Function? onSaved;
+  final Function? onTap;
+  final String? errorText;
+  final TextInputType? keyboardType;
+  final IconData? icon;
+  final bool? isMultiline;
+  final bool? readonly;
+  final bool? isPassword;
+  final String? defaultText;
+  final String? suffixText;
+  final TextInputAction? customTextInputAction;
+
+  const CustomTextBox({
+    super.key,
+    required this.label,
+    this.helperText = "",
+    this.errorText,
+    this.isMultiline = false,
+    this.icon,
+    this.readonly = false,
+    this.validator,
+    this.defaultText = "",
+    this.isPassword = false,
+    this.onSaved,
+    this.suffixText = "",
+    this.keyboardType = TextInputType.text,
+    this.customTextInputAction = TextInputAction.next,
+    this.onTap,
+  });
+
+  @override
+  State<CustomTextBox> createState() => _CustomTextBoxState();
+}
+
+class _CustomTextBoxState extends State<CustomTextBox> {
+  TextEditingController controller = TextEditingController();
+  @override
+  void initState() {
+    controller.text = widget.defaultText!;
+    super.initState();
+  }
+
+  @override
+  void didUpdateWidget(covariant CustomTextBox oldWidget) {
+    if (oldWidget.defaultText != widget.defaultText) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.text = widget.defaultText!;
+      });
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  InputBorder _customBorder(Color color) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: color, width: 1.5),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.label,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          AppSpacing.v4,
+          TextFormField(
+            controller: controller,
+            readOnly: widget.readonly!,
+            maxLines: widget.isMultiline! ? 3 : 1,
+            keyboardType: widget.keyboardType,
+            onTap: () {
+              if (widget.onTap != null) {
+                widget.onTap!();
+              }
+            },
+            textInputAction: widget.customTextInputAction,
+            obscureText: widget.isPassword!,
+            decoration: InputDecoration(
+              hintText: widget.helperText,
+              errorText: widget.errorText,
+              suffixText: widget.suffixText,
+              enabledBorder: _customBorder(AppColors.light),
+              focusedBorder: _customBorder(AppColors.primary),
+              errorBorder: _customBorder(Colors.red),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              suffixIcon: Icon(widget.icon ?? Icons.edit,
+                  size: 16, color: Colors.grey.shade400),
+            ),
+            onSaved: (val) {
+              if (widget.onSaved != null) {
+                widget.onSaved!(val);
+              }
+            },
+            validator: (value) {
+              if (widget.validator != null) {
+                return widget.validator!(value);
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CustomButtonModel {
+  final String text;
+  final Color color;
+  final bool enabled;
+  final IconData icon;
+  final Function onPressed;
+  final bool visible;
+
+  CustomButtonModel({
+    required this.text,
+    required this.color,
+    this.enabled = true,
+    required this.icon,
+    this.visible = true,
+    required this.onPressed,
+  });
+  CustomButton toWidget() => CustomButton(
+      text: text,
+      color: color,
+      enabled: enabled,
+      icon: icon,
+      onPressed: onPressed());
+}
+
+class CustomButton extends StatelessWidget {
+  final String text;
+  final Color color;
+  final bool enabled;
+  final IconData icon;
+  final double height;
+  final VoidCallback onPressed;
+  final bool visible;
+  final RxBool _onHover = false.obs;
+
+  CustomButton({
+    super.key,
+    required this.text,
+    required this.color,
+    this.enabled = true,
+    required this.icon,
+    required this.onPressed,
+    this.height = 60,
+    this.visible = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Visibility(
+      visible: visible,
+      child: MouseRegion(
+        onEnter: (_) => _onHover.value = true,
+        onExit: (_) => _onHover.value = false,
+        child: GestureDetector(
+          onTapDown: (_) => _onHover.value = true,
+          onTapUp: (_) {
+            _onHover.value = false;
+            onPressed();
+          },
+          onTapCancel: () => _onHover.value = false,
+          child: Obx(() {
+            final isHover = _onHover.value;
+
+            return AnimatedContainer(
+              height: height,
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: isHover ? color : Colors.transparent,
+                border: Border.all(color: color, width: 2),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: isHover ? Colors.white : color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  AppSpacing.h16,
+                  Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(60),
+                          border: Border.all(
+                              width: 2,
+                              color: isHover ? AppColors.white : color)),
+                      child:
+                          Icon(icon, color: isHover ? AppColors.white : color)),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+class CustomIconButton extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final RxBool _onHover = false.obs;
+
+  CustomIconButton({
+    super.key,
+    required this.color,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => _onHover.value = true,
+      onExit: (_) => _onHover.value = false,
+      child: GestureDetector(
+        onTapDown: (_) => _onHover.value = true,
+        onTapUp: (_) {
+          _onHover.value = false;
+          onPressed();
+        },
+        onTapCancel: () => _onHover.value = false,
+        child: Obx(() {
+          final isHover = _onHover.value;
+
+          return Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                  color: isHover ? color : Colors.transparent,
+                  borderRadius: BorderRadius.circular(60),
+                  border: Border.all(
+                      width: 2, color: isHover ? AppColors.white : color)),
+              child: Icon(icon, color: isHover ? AppColors.white : color));
+        }),
+      ),
+    );
+  }
+}
+
+class DatepickerBox extends StatefulWidget {
+  final Function? onSaved;
+  final String label;
+  final DateTime initialDate;
+  final DateTime lastDate;
+
+  const DatepickerBox(
+      {super.key,
+      this.onSaved,
+      this.label = "",
+      required this.initialDate,
+      required this.lastDate});
+
+  @override
+  State<DatepickerBox> createState() => _DatepickerBoxState();
+}
+
+class _DatepickerBoxState extends State<DatepickerBox> {
+  DateTime selectedDate = DateTime.now();
+
+  Future<void> _showDatePicker(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: widget.initialDate,
+      firstDate: DateTime(2000),
+      lastDate: widget.lastDate,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.light, // calendar header
+              onPrimary: AppColors.dark, // calendar text
+              onSurface: AppColors.primary, // body text
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.black, // button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        selectedDate = pickedDate;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    selectedDate = widget.initialDate;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomTextBox(
+      label: 'Date',
+      readonly: true,
+      onTap: () {
+        _showDatePicker(context);
+      },
+      defaultText: DateFormat('dd/MM/yyyy').format(selectedDate),
+      onSaved: (val) {
+        if (widget.onSaved != null) {
+          widget.onSaved!(DateFormat('dd/MM/yyyy').parse(val!));
+        }
+      },
+      icon: Icons.calendar_today,
+    );
+  }
+}
